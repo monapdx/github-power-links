@@ -47,6 +47,54 @@ const builderFieldOrder = [
   "releaseTag",
 ];
 
+const builderGuideMedia = {
+  discussionCategory: {
+    src: new URL("../../discussion-category.gif", import.meta.url).href,
+    alt: "How to find a discussion category in GitHub",
+    caption: "Where to find the discussion category slug on GitHub.",
+  },
+  issueTemplate: {
+    src: new URL("../../issue-template-filename.gif", import.meta.url).href,
+    alt: "How to find an issue template filename in GitHub",
+    caption: "How to copy the exact issue template filename.",
+  },
+  newIssue: {
+    src: new URL("../../issue-labels.gif", import.meta.url).href,
+    alt: "How to find issue labels in GitHub",
+    caption: "How to find and format labels for prefilled issue links.",
+  },
+  file: {
+    src: new URL("../../file-view-path.gif", import.meta.url).href,
+    alt: "How to find a file path in GitHub",
+    caption: "Use the file URL to copy the branch and path values.",
+  },
+  rawFile: {
+    src: new URL("../../file-view-path.gif", import.meta.url).href,
+    alt: "How to find a file path in GitHub",
+    caption: "Use the file URL to copy the branch and path values.",
+  },
+  editFile: {
+    src: new URL("../../file-view-path.gif", import.meta.url).href,
+    alt: "How to find a file path in GitHub",
+    caption: "Use the file URL to copy the branch and path values.",
+  },
+  deleteFile: {
+    src: new URL("../../file-view-path.gif", import.meta.url).href,
+    alt: "How to find a file path in GitHub",
+    caption: "Use the file URL to copy the branch and path values.",
+  },
+  folder: {
+    src: new URL("../../folder-view-path.gif", import.meta.url).href,
+    alt: "How to find a folder path in GitHub",
+    caption: "Use the folder URL to copy the branch and directory path values.",
+  },
+  commit: {
+    src: new URL("../../Commit-SHA.gif", import.meta.url).href,
+    alt: "How to find a commit SHA in GitHub",
+    caption: "Open a commit page and copy the SHA from the URL or header.",
+  },
+};
+
 function generateProfileLinks(username) {
   if (!username) return [];
   return dedupeByUrl(
@@ -284,6 +332,7 @@ export default function GitHubPowerLinksGenerator() {
   const cleanUsername = parseUsername(username);
   const cleanRepo = parseRepo(repo);
   const selectedBuilderPattern = builderPatterns[builderPattern];
+  const selectedBuilderGuide = builderGuideMedia[builderPattern] || null;
   const neededBuilderFields = useMemo(
     () => new Set(selectedBuilderPattern?.fields || []),
     [selectedBuilderPattern]
@@ -592,6 +641,19 @@ export default function GitHubPowerLinksGenerator() {
                 <p className="rounded-xl border-2 border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700">
                   {selectedBuilderPattern?.note || ""}
                 </p>
+
+                {selectedBuilderGuide ? (
+                  <div className="rounded-2xl border-2 border-zinc-300 bg-zinc-50 p-3">
+                    <div className="mb-2 text-sm font-semibold">How to find this on GitHub</div>
+                    <img
+                      src={selectedBuilderGuide.src}
+                      alt={selectedBuilderGuide.alt}
+                      className="w-full rounded-xl border border-zinc-300"
+                      loading="lazy"
+                    />
+                    <p className="mt-2 text-xs text-zinc-600">{selectedBuilderGuide.caption}</p>
+                  </div>
+                ) : null}
 
                 {builderFieldOrder
                   .filter((field) => neededBuilderFields.has(field))
