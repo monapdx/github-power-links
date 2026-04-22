@@ -38,6 +38,8 @@ https://YOUR-USERNAME.github.io/github-power-links/
 
 ---
 
+[![Report broken links](https://img.shields.io/badge/%F0%9F%91%89Report%20broken%20links-111111?style=for-the-badge)](#) [![Suggest a link](https://img.shields.io/badge/%F0%9F%91%89Suggest%20a%20link-111111?style=for-the-badge)](#)
+
 ## Getting Started (Local Development)
 
 ### 1. Create project
