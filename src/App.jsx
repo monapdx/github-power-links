@@ -1,86 +1,65 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { bulkProfilePatterns, bulkRepoPatterns, builderPatterns } from "./patterns";
+import {
+  buildBadgeImageUrl,
+  cleanInput,
+  copyToClipboard,
+  dedupeByUrl,
+  escapeHtml,
+  parseRepo,
+  parseUsername,
+} from "./utils";
 
-const profilePatterns = [
-  { label: "Profile", build: (u) => `https://github.com/${u}` },
-  { label: "Overview", build: (u) => `https://github.com/${u}?tab=overview` },
-  { label: "Repositories", build: (u) => `https://github.com/${u}?tab=repositories` },
-  { label: "Projects", build: (u) => `https://github.com/${u}?tab=projects` },
-  { label: "Packages", build: (u) => `https://github.com/${u}?tab=packages` },
-  { label: "Stars", build: (u) => `https://github.com/${u}?tab=stars` },
-  { label: "Followers", build: (u) => `https://github.com/${u}?tab=followers` },
-  { label: "Following", build: (u) => `https://github.com/${u}?tab=following` },
-  { label: "Achievements", build: (u) => `https://github.com/${u}?achievement=1` },
-  { label: "Pinned repositories", build: (u) => `https://github.com/${u}?tab=repositories&type=source` },
-  { label: "Public activity", build: (u) => `https://github.com/${u}?tab=activity` },
+const helpGifModules = import.meta.glob(["../*.gif", "../*.GIF", "../public/**/*.gif", "../public/**/*.GIF"], {
+  eager: true,
+  import: "default",
+});
+const discoveredHelpGifs = Object.entries(helpGifModules).map(([filePath, url]) => ({
+  filePath,
+  url: String(url),
+}));
+
+const builderFieldMeta = {
+  owner: { label: "Owner / Username", placeholder: "monapdx" },
+  repo: { label: "Repository", placeholder: "Frontend-Widgets" },
+  branch: { label: "Branch", placeholder: "main" },
+  path: { label: "Path", placeholder: "src/index.js" },
+  template: { label: "Issue template filename", placeholder: "add-template.yml" },
+  labels: { label: "Labels", placeholder: "bug,help wanted" },
+  title: { label: "Issue title", placeholder: "Suggestion: add new widget" },
+  body: { label: "Issue body", placeholder: "Write some default issue body text here...", type: "textarea" },
+  discussionCategory: { label: "Discussion category", placeholder: "ideas" },
+  wikiPage: { label: "Wiki page", placeholder: "Home" },
+  base: { label: "Compare base", placeholder: "main" },
+  head: { label: "Compare head", placeholder: "feature-branch" },
+  commit: { label: "Commit SHA", placeholder: "abc123def456" },
+  releaseTag: { label: "Release tag", placeholder: "v1.0.0" },
+  linkText: { label: "Link text / button text", placeholder: "Open on GitHub" },
+  badgeLabel: { label: "Badge label", placeholder: "Open on GitHub" },
+  badgeColor: { label: "Badge color", placeholder: "pink" },
+};
+
+const builderFieldOrder = [
+  "owner",
+  "repo",
+  "branch",
+  "path",
+  "template",
+  "labels",
+  "title",
+  "body",
+  "discussionCategory",
+  "wikiPage",
+  "base",
+  "head",
+  "commit",
+  "releaseTag",
 ];
-
-const repoPatterns = [
-  { label: "Repository", build: (u, r) => `https://github.com/${u}/${r}` },
-  { label: "Code", build: (u, r) => `https://github.com/${u}/${r}` },
-  { label: "Issues", build: (u, r) => `https://github.com/${u}/${r}/issues` },
-  { label: "Pull requests", build: (u, r) => `https://github.com/${u}/${r}/pulls` },
-  { label: "Actions", build: (u, r) => `https://github.com/${u}/${r}/actions` },
-  { label: "Projects", build: (u, r) => `https://github.com/${u}/${r}/projects` },
-  { label: "Wiki", build: (u, r) => `https://github.com/${u}/${r}/wiki` },
-  { label: "Security", build: (u, r) => `https://github.com/${u}/${r}/security` },
-  { label: "Insights", build: (u, r) => `https://github.com/${u}/${r}/pulse` },
-  { label: "Pulse", build: (u, r) => `https://github.com/${u}/${r}/pulse` },
-  { label: "Graphs / contributors", build: (u, r) => `https://github.com/${u}/${r}/graphs/contributors` },
-  { label: "Graphs / commit activity", build: (u, r) => `https://github.com/${u}/${r}/graphs/commit-activity` },
-  { label: "Graphs / code frequency", build: (u, r) => `https://github.com/${u}/${r}/graphs/code-frequency` },
-  { label: "Graphs / network", build: (u, r) => `https://github.com/${u}/${r}/network` },
-  { label: "Network / members", build: (u, r) => `https://github.com/${u}/${r}/network/members` },
-  { label: "Forks", build: (u, r) => `https://github.com/${u}/${r}/forks` },
-  { label: "Stargazers", build: (u, r) => `https://github.com/${u}/${r}/stargazers` },
-  { label: "Watchers", build: (u, r) => `https://github.com/${u}/${r}/watchers` },
-  { label: "Releases", build: (u, r) => `https://github.com/${u}/${r}/releases` },
-  { label: "Tags", build: (u, r) => `https://github.com/${u}/${r}/tags` },
-  { label: "Branches", build: (u, r) => `https://github.com/${u}/${r}/branches` },
-  { label: "Contributors", build: (u, r) => `https://github.com/${u}/${r}/graphs/contributors` },
-  { label: "Commits", build: (u, r) => `https://github.com/${u}/${r}/commits` },
-  { label: "Activity", build: (u, r) => `https://github.com/${u}/${r}/activity` },
-  { label: "Traffic", build: (u, r) => `https://github.com/${u}/${r}/graphs/traffic` },
-  { label: "Dependabot alerts", build: (u, r) => `https://github.com/${u}/${r}/security/dependabot` },
-  { label: "Secret scanning", build: (u, r) => `https://github.com/${u}/${r}/security/secret-scanning` },
-  { label: "Code scanning", build: (u, r) => `https://github.com/${u}/${r}/security/code-scanning` },
-  { label: "Deployments", build: (u, r) => `https://github.com/${u}/${r}/deployments` },
-  { label: "Environments", build: (u, r) => `https://github.com/${u}/${r}/environments` },
-  { label: "Packages", build: (u, r) => `https://github.com/${u}/${r}/packages` },
-  { label: "Labels", build: (u, r) => `https://github.com/${u}/${r}/labels` },
-  { label: "Milestones", build: (u, r) => `https://github.com/${u}/${r}/milestones` },
-  { label: "Discussions", build: (u, r) => `https://github.com/${u}/${r}/discussions` },
-  { label: "Pulse (weekly summary)", build: (u, r) => `https://github.com/${u}/${r}/pulse` },
-];
-
-function cleanInput(value) {
-  return String(value || "")
-    .trim()
-    .replace(/^https?:\/\/github\.com\//i, "")
-    .replace(/^github\.com\//i, "")
-    .replace(/^\/+|\/+$/g, "");
-}
-
-function parseUsername(value) {
-  return cleanInput(value).split("/")[0] || "";
-}
-
-function parseRepo(value) {
-  return cleanInput(value).split("/")[0] || "";
-}
-
-function dedupeByUrl(items) {
-  const seen = new Set();
-  return items.filter((item) => {
-    if (seen.has(item.url)) return false;
-    seen.add(item.url);
-    return true;
-  });
-}
 
 function generateProfileLinks(username) {
   if (!username) return [];
   return dedupeByUrl(
-    profilePatterns.map((item) => ({
+    bulkProfilePatterns.map((item) => ({
       label: item.label,
       url: item.build(username),
     }))
@@ -90,11 +69,115 @@ function generateProfileLinks(username) {
 function generateRepoLinks(username, repo) {
   if (!username || !repo) return [];
   return dedupeByUrl(
-    repoPatterns.map((item) => ({
+    bulkRepoPatterns.map((item) => ({
       label: item.label,
       url: item.build(username, repo),
     }))
   );
+}
+
+function getDefaultBuilderInputs(owner = "", repo = "") {
+  return {
+    owner,
+    repo,
+    branch: "main",
+    path: "",
+    template: "",
+    labels: "",
+    title: "",
+    body: "",
+    discussionCategory: "",
+    wikiPage: "",
+    base: "main",
+    head: "",
+    commit: "",
+    releaseTag: "",
+    linkText: "Open on GitHub",
+    badgeLabel: "Open on GitHub",
+    badgeColor: "pink",
+  };
+}
+
+function toSlugVariants(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return [];
+
+  const cleaned = raw
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim();
+
+  if (!cleaned) return [];
+
+  const words = cleaned.split(/\s+/);
+  const lowerWords = words.map((word) => word.toLowerCase());
+
+  return Array.from(
+    new Set([
+      raw,
+      cleaned,
+      lowerWords.join(""),
+      lowerWords.join("-"),
+      lowerWords.join("_"),
+      lowerWords.join(" "),
+    ])
+  );
+}
+
+function normalizeGifStem(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\.gif$/i, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getDiscoveredHelpGifCandidates(patternKey, patternConfig) {
+  const targetStems = Array.from(
+    new Set([...toSlugVariants(patternKey), ...toSlugVariants(patternConfig?.label || "")])
+  ).map(normalizeGifStem);
+
+  if (!targetStems.length) return [];
+
+  const scored = discoveredHelpGifs
+    .map((gif) => {
+      const filename = gif.filePath.split("/").pop() || "";
+      const stem = normalizeGifStem(filename);
+      let score = 0;
+
+      for (const target of targetStems) {
+        if (!target) continue;
+        if (stem === target) score = Math.max(score, 4);
+        else if (stem.startsWith(`${target} `)) score = Math.max(score, 3);
+        else if (stem.includes(target)) score = Math.max(score, 2);
+      }
+
+      return score > 0 ? { url: gif.url, score } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score);
+
+  return Array.from(new Set(scored.map((item) => item.url)));
+}
+
+function getBuilderHelpGifCandidates(patternKey, patternConfig) {
+  const candidates = [];
+  const label = patternConfig?.label || "";
+
+  if (patternConfig?.helpGif) {
+    candidates.push(patternConfig.helpGif);
+  }
+
+  const stems = Array.from(new Set([...toSlugVariants(patternKey), ...toSlugVariants(label)]));
+
+  for (const stem of stems) {
+    candidates.push(`/gifs/${stem}.gif`);
+    candidates.push(`/gifs/${stem}.GIF`);
+    candidates.push(`/${stem}.gif`);
+    candidates.push(`/${stem}.GIF`);
+  }
+
+  return Array.from(new Set([...getDiscoveredHelpGifCandidates(patternKey, patternConfig), ...candidates]));
 }
 
 function IconBase({ children, size = 16, className = "" }) {
@@ -164,15 +247,11 @@ function LinkCard({ label, url }) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
-    try {
-      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1200);
-      }
-    } catch (err) {
-      console.error("Copy failed", err);
-    }
+    const ok = await copyToClipboard(url);
+    if (!ok) return;
+
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
   }
 
   return (
@@ -273,11 +352,43 @@ function TestCasesPanel() {
 }
 
 export default function GitHubPowerLinksGenerator() {
+  const [mode, setMode] = useState("explorer");
   const [username, setUsername] = useState("octocat");
   const [repo, setRepo] = useState("Hello-World");
+  const [profileExpanded, setProfileExpanded] = useState(true);
+  const [repoExpanded, setRepoExpanded] = useState(true);
+  const [builderPattern, setBuilderPattern] = useState("repo");
+  const [builderInputs, setBuilderInputs] = useState(getDefaultBuilderInputs("octocat", "Hello-World"));
+  const [builderOutputs, setBuilderOutputs] = useState({
+    plainUrl: "",
+    markdownLink: "",
+    badgeMarkdown: "",
+    htmlLink: "",
+    previewUrl: "",
+    previewText: "Open on GitHub",
+    badgeUrl: "",
+    badgeAlt: "Badge preview",
+  });
+  const [builderError, setBuilderError] = useState("");
+  const [builderCopiedKey, setBuilderCopiedKey] = useState("");
 
   const cleanUsername = parseUsername(username);
   const cleanRepo = parseRepo(repo);
+  const selectedBuilderPattern = builderPatterns[builderPattern];
+  const neededBuilderFields = useMemo(
+    () => new Set(selectedBuilderPattern?.fields || []),
+    [selectedBuilderPattern]
+  );
+  const builderHelpGifCandidates = useMemo(
+    () => getBuilderHelpGifCandidates(builderPattern, selectedBuilderPattern),
+    [builderPattern, selectedBuilderPattern]
+  );
+  const [builderHelpGifIndex, setBuilderHelpGifIndex] = useState(0);
+  const builderHelpGifSrc = builderHelpGifCandidates[builderHelpGifIndex] || "";
+
+  useEffect(() => {
+    setBuilderHelpGifIndex(0);
+  }, [builderHelpGifCandidates]);
 
   const profileLinks = useMemo(() => generateProfileLinks(cleanUsername), [cleanUsername]);
   const repoLinks = useMemo(() => generateRepoLinks(cleanUsername, cleanRepo), [cleanUsername, cleanRepo]);
@@ -298,18 +409,114 @@ export default function GitHubPowerLinksGenerator() {
   }, [profileLinks, repoLinks]);
 
   async function copyAll() {
-    try {
-      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(exportText);
-      }
-    } catch (err) {
-      console.error("Copy all failed", err);
+    await copyToClipboard(exportText);
+  }
+
+  function handleModeChange(nextMode) {
+    setMode(nextMode);
+    if (nextMode === "builder") {
+      setBuilderInputs((current) => ({
+        ...current,
+        owner: current.owner || cleanUsername,
+        repo: current.repo || cleanRepo,
+      }));
     }
+  }
+
+  function updateBuilderInput(field, value) {
+    setBuilderInputs((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function normalizeBuilderIdentityInputs(field) {
+    setBuilderInputs((current) => {
+      const next = { ...current };
+
+      if (field === "owner") {
+        const ownerFromOwner = parseUsername(current.owner);
+        const segments = cleanInput(current.owner).split("/").filter(Boolean);
+        const repoFromOwner = segments[1] || "";
+
+        next.owner = ownerFromOwner;
+        if (!current.repo && repoFromOwner) {
+          next.repo = repoFromOwner;
+        }
+      }
+
+      if (field === "repo") {
+        next.repo = parseRepo(current.repo);
+      }
+
+      return next;
+    });
+  }
+
+  function generateBuilderOutputs() {
+    const selected = builderPatterns[builderPattern];
+    if (!selected) return;
+
+    const values = Object.fromEntries(
+      Object.entries(builderInputs).map(([key, value]) => [key, String(value || "").trim()])
+    );
+
+    const missing = selected.fields.filter((key) => !values[key]);
+    if (missing.length) {
+      setBuilderError(`Please fill in: ${missing.join(", ")}`);
+      return;
+    }
+
+    const url = selected.build(values);
+    const linkText = values.linkText || "Open on GitHub";
+    const badgeLabel = values.badgeLabel || "Open on GitHub";
+    const badgeUrl = buildBadgeImageUrl(badgeLabel, values.badgeColor);
+    const markdownLink = `[${linkText}](${url})`;
+    const badgeMarkdown = `[![${badgeLabel}](${badgeUrl})](${url})`;
+    const htmlLink = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkText)}</a>`;
+
+    setBuilderOutputs({
+      plainUrl: url,
+      markdownLink,
+      badgeMarkdown,
+      htmlLink,
+      previewUrl: url,
+      previewText: linkText,
+      badgeUrl,
+      badgeAlt: badgeLabel,
+    });
+    setBuilderError("");
+    setBuilderCopiedKey("");
+  }
+
+  function resetBuilder() {
+    setBuilderPattern("repo");
+    setBuilderInputs(getDefaultBuilderInputs(cleanUsername, cleanRepo));
+    setBuilderOutputs({
+      plainUrl: "",
+      markdownLink: "",
+      badgeMarkdown: "",
+      htmlLink: "",
+      previewUrl: "",
+      previewText: "Open on GitHub",
+      badgeUrl: "",
+      badgeAlt: "Badge preview",
+    });
+    setBuilderError("");
+    setBuilderCopiedKey("");
+  }
+
+  async function copyBuilderOutput(key, value) {
+    const ok = await copyToClipboard(value);
+    if (!ok) return;
+
+    setBuilderCopiedKey(key);
+    setTimeout(() => setBuilderCopiedKey(""), 1200);
   }
 
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-900">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1700px] px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 rounded-3xl border-4 border-zinc-900 bg-white p-6 shadow-[8px_8px_0_0_#18181b]">
           <div className="flex items-center gap-3">
             <div className="rounded-2xl border-4 border-zinc-900 bg-pink-500 p-3 text-white">
@@ -318,92 +525,345 @@ export default function GitHubPowerLinksGenerator() {
             <div>
               <h1 className="text-3xl font-black tracking-tight">GitHub Power Links</h1>
               <p className="mt-1 text-sm text-zinc-600">
-                Drop in a GitHub username and optional repo name, then get a big bundle of useful GitHub URLs.
+                Explore bulk GitHub links or build one precise link with markdown and badge outputs.
               </p>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold">GitHub username *</span>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="octocat"
-                className="w-full rounded-2xl border-4 border-zinc-900 bg-lime-200 px-4 py-3 text-base outline-none placeholder:text-zinc-600"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold">Repository name (optional)</span>
-              <input
-                value={repo}
-                onChange={(e) => setRepo(e.target.value)}
-                placeholder="Hello-World"
-                className="w-full rounded-2xl border-4 border-zinc-900 bg-cyan-200 px-4 py-3 text-base outline-none placeholder:text-zinc-600"
-              />
-            </label>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-6 inline-flex rounded-2xl border-4 border-zinc-900 bg-white p-1">
             <button
-              onClick={copyAll}
-              disabled={!cleanUsername}
-              className="inline-flex items-center gap-2 rounded-2xl border-4 border-zinc-900 bg-zinc-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => handleModeChange("explorer")}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold ${
+                mode === "explorer" ? "bg-zinc-900 text-white" : "text-zinc-700"
+              }`}
             >
-              <CopyIcon size={16} />
-              Copy all links
+              Explorer
             </button>
-            <div className="inline-flex items-center gap-2 rounded-2xl border-4 border-zinc-900 bg-white px-4 py-3 text-sm font-medium">
-              <SearchIcon size={16} />
-              {profileLinks.length + repoLinks.length} links generated
-            </div>
+            <button
+              onClick={() => handleModeChange("builder")}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold ${
+                mode === "builder" ? "bg-zinc-900 text-white" : "text-zinc-700"
+              }`}
+            >
+              Builder
+            </button>
           </div>
         </div>
 
-        {!cleanUsername ? (
-          <div className="rounded-3xl border-4 border-dashed border-zinc-400 bg-white p-10 text-center text-zinc-600">
-            Enter a GitHub username to generate links.
-          </div>
-        ) : (
-          <div className="grid gap-8 lg:grid-cols-2">
-            <section>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-2xl font-black">Profile links</h2>
-                <span className="rounded-full border-2 border-zinc-900 bg-white px-3 py-1 text-xs font-bold">
-                  {profileLinks.length}
-                </span>
+        {mode === "explorer" ? (
+          <>
+            <div className="mb-8 rounded-3xl border-4 border-zinc-900 bg-white p-6 shadow-[8px_8px_0_0_#18181b]">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold">GitHub username *</span>
+                  <input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="octocat"
+                    className="w-full rounded-2xl border-4 border-zinc-900 bg-lime-200 px-4 py-3 text-base outline-none placeholder:text-zinc-600"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold">Repository name (optional)</span>
+                  <input
+                    value={repo}
+                    onChange={(e) => setRepo(e.target.value)}
+                    placeholder="Hello-World"
+                    className="w-full rounded-2xl border-4 border-zinc-900 bg-cyan-200 px-4 py-3 text-base outline-none placeholder:text-zinc-600"
+                  />
+                </label>
               </div>
-              <div className="grid gap-4">
-                {profileLinks.map((link) => (
-                  <LinkCard key={link.url} label={link.label} url={link.url} />
-                ))}
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  onClick={copyAll}
+                  disabled={!cleanUsername}
+                  className="inline-flex items-center gap-2 rounded-2xl border-4 border-zinc-900 bg-zinc-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <CopyIcon size={16} />
+                  Copy all links
+                </button>
+                <div className="inline-flex items-center gap-2 rounded-2xl border-4 border-zinc-900 bg-white px-4 py-3 text-sm font-medium">
+                  <SearchIcon size={16} />
+                  {profileLinks.length + repoLinks.length} links generated
+                </div>
+              </div>
+            </div>
+
+            {!cleanUsername ? (
+              <div className="rounded-3xl border-4 border-dashed border-zinc-400 bg-white p-10 text-center text-zinc-600">
+                Enter a GitHub username to generate links.
+              </div>
+            ) : (
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+                <section>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-2xl font-black">Profile links</h2>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full border-2 border-zinc-900 bg-white px-3 py-1 text-xs font-bold">
+                        {profileLinks.length}
+                      </span>
+                      <button
+                        onClick={() => setProfileExpanded((current) => !current)}
+                        className="rounded-xl border-2 border-zinc-900 px-3 py-1 text-xs font-semibold"
+                      >
+                        {profileExpanded ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                  </div>
+                  {profileExpanded ? (
+                    <div className="grid gap-4">
+                      {profileLinks.map((link) => (
+                        <LinkCard key={link.url} label={link.label} url={link.url} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-3xl border-4 border-dashed border-zinc-400 bg-white p-8 text-zinc-600">
+                      Profile links are collapsed.
+                    </div>
+                  )}
+                </section>
+
+                <section>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-2xl font-black">Repository links</h2>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full border-2 border-zinc-900 bg-white px-3 py-1 text-xs font-bold">
+                        {repoLinks.length}
+                      </span>
+                      <button
+                        onClick={() => setRepoExpanded((current) => !current)}
+                        className="rounded-xl border-2 border-zinc-900 px-3 py-1 text-xs font-semibold"
+                      >
+                        {repoExpanded ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                  </div>
+                  {cleanRepo ? (
+                    repoExpanded ? (
+                      <div className="grid gap-4">
+                        {repoLinks.map((link) => (
+                          <LinkCard key={link.url} label={link.label} url={link.url} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-3xl border-4 border-dashed border-zinc-400 bg-white p-8 text-zinc-600">
+                        Repository links are collapsed.
+                      </div>
+                    )
+                  ) : (
+                    <div className="rounded-3xl border-4 border-dashed border-zinc-400 bg-white p-8 text-zinc-600">
+                      Add a repository name to generate repo-specific links like Pulse, Issues, Releases, Branches, and
+                      more.
+                    </div>
+                  )}
+                </section>
+              </div>
+            )}
+            <TestCasesPanel />
+          </>
+        ) : (
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)]">
+            <section className="rounded-3xl border-4 border-zinc-900 bg-white p-6 shadow-[8px_8px_0_0_#18181b]">
+              <h2 className="text-2xl font-black">Build link</h2>
+              <p className="mt-1 text-sm text-zinc-600">
+                Choose a pattern and fill in its required fields. Input parsing supports usernames or full GitHub URLs.
+              </p>
+
+              <div className="mt-5 space-y-4">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold">Link type</span>
+                  <select
+                    value={builderPattern}
+                    onChange={(e) => {
+                      setBuilderPattern(e.target.value);
+                      setBuilderError("");
+                    }}
+                    className="w-full rounded-2xl border-4 border-zinc-900 bg-zinc-100 px-4 py-3 text-base outline-none"
+                  >
+                    {Object.entries(builderPatterns).map(([key, config]) => (
+                      <option key={key} value={key}>
+                        {config.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <p className="rounded-xl border-2 border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700">
+                  {selectedBuilderPattern?.note || ""}
+                </p>
+
+                {builderHelpGifSrc ? (
+                  <div className="rounded-2xl border-2 border-zinc-300 bg-zinc-50 p-3">
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                      Where to find this on GitHub
+                    </div>
+                    <img
+                      src={builderHelpGifSrc}
+                      alt={`${selectedBuilderPattern?.label || "Selected"} walkthrough`}
+                      className="w-full rounded-xl border border-zinc-300"
+                      loading="lazy"
+                      onError={() => setBuilderHelpGifIndex((current) => current + 1)}
+                    />
+                  </div>
+                ) : null}
+
+                {builderFieldOrder
+                  .filter((field) => neededBuilderFields.has(field))
+                  .map((field) => {
+                    const meta = builderFieldMeta[field];
+                    const isRequired = neededBuilderFields.has(field);
+                    if (meta.type === "textarea") {
+                      return (
+                        <label key={field} className="block">
+                          <span className="mb-2 block text-sm font-semibold">
+                            {meta.label}
+                            {isRequired ? " *" : ""}
+                          </span>
+                          <textarea
+                            value={builderInputs[field]}
+                            onChange={(e) => updateBuilderInput(field, e.target.value)}
+                            placeholder={meta.placeholder}
+                            className="min-h-28 w-full rounded-2xl border-4 border-zinc-900 bg-zinc-100 px-4 py-3 text-base outline-none placeholder:text-zinc-600"
+                          />
+                        </label>
+                      );
+                    }
+
+                    return (
+                      <label key={field} className="block">
+                        <span className="mb-2 block text-sm font-semibold">
+                          {meta.label}
+                          {isRequired ? " *" : ""}
+                        </span>
+                        <input
+                          value={builderInputs[field]}
+                          onChange={(e) => updateBuilderInput(field, e.target.value)}
+                          onBlur={() => {
+                            if (field === "owner" || field === "repo") {
+                              normalizeBuilderIdentityInputs(field);
+                            }
+                          }}
+                          placeholder={meta.placeholder}
+                          className="w-full rounded-2xl border-4 border-zinc-900 bg-zinc-100 px-4 py-3 text-base outline-none placeholder:text-zinc-600"
+                        />
+                      </label>
+                    );
+                  })}
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  {["linkText", "badgeLabel", "badgeColor"].map((field) => {
+                    const meta = builderFieldMeta[field];
+                    return (
+                      <label key={field} className="block">
+                        <span className="mb-2 block text-sm font-semibold">{meta.label}</span>
+                        <input
+                          value={builderInputs[field]}
+                          onChange={(e) => updateBuilderInput(field, e.target.value)}
+                          placeholder={meta.placeholder}
+                          className="w-full rounded-2xl border-4 border-zinc-900 bg-zinc-100 px-4 py-3 text-base outline-none placeholder:text-zinc-600"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {builderError ? (
+                  <p className="rounded-xl border-2 border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+                    {builderError}
+                  </p>
+                ) : null}
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={generateBuilderOutputs}
+                    className="inline-flex items-center gap-2 rounded-2xl border-4 border-zinc-900 bg-zinc-900 px-4 py-3 text-sm font-semibold text-white"
+                  >
+                    <SearchIcon size={16} />
+                    Generate
+                  </button>
+                  <button
+                    onClick={resetBuilder}
+                    className="inline-flex items-center gap-2 rounded-2xl border-4 border-zinc-900 bg-white px-4 py-3 text-sm font-semibold"
+                  >
+                    Reset
+                  </button>
+                </div>
+
+                <p className="text-xs text-zinc-500">
+                  Builder fields are trimmed automatically with {`cleanInput()`} from shared utilities.
+                </p>
               </div>
             </section>
 
-            <section>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-2xl font-black">Repository links</h2>
-                <span className="rounded-full border-2 border-zinc-900 bg-white px-3 py-1 text-xs font-bold">
-                  {repoLinks.length}
-                </span>
+            <section className="rounded-3xl border-4 border-zinc-900 bg-white p-6 shadow-[8px_8px_0_0_#18181b]">
+              <h2 className="text-2xl font-black">Output</h2>
+              <p className="mt-1 text-sm text-zinc-600">
+                Copy the generated URL in the format you need for docs, READMEs, and GitHub comments.
+              </p>
+
+              <div className="mt-5 space-y-4">
+                {[
+                  { key: "plainUrl", label: "Plain URL", value: builderOutputs.plainUrl, textarea: false },
+                  { key: "markdownLink", label: "Markdown Link", value: builderOutputs.markdownLink, textarea: true },
+                  { key: "badgeMarkdown", label: "Badge Markdown", value: builderOutputs.badgeMarkdown, textarea: true },
+                  { key: "htmlLink", label: "HTML Link/Button", value: builderOutputs.htmlLink, textarea: true },
+                ].map((item) => (
+                  <div key={item.key} className="rounded-2xl border-2 border-zinc-300 p-3">
+                    <div className="mb-2 text-sm font-semibold">{item.label}</div>
+                    {item.textarea ? (
+                      <textarea
+                        readOnly
+                        value={item.value}
+                        className="w-full rounded-xl border-2 border-zinc-300 bg-zinc-50 p-3 text-xs text-zinc-700"
+                      />
+                    ) : (
+                      <input
+                        readOnly
+                        value={item.value}
+                        className="w-full rounded-xl border-2 border-zinc-300 bg-zinc-50 p-3 text-xs text-zinc-700"
+                      />
+                    )}
+                    <button
+                      onClick={() => copyBuilderOutput(item.key, item.value)}
+                      className="mt-2 inline-flex items-center gap-2 rounded-xl border-2 border-zinc-900 px-3 py-2 text-sm font-semibold"
+                    >
+                      <CopyIcon size={16} />
+                      {builderCopiedKey === item.key ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                ))}
+
+                <div className="rounded-2xl border-2 border-zinc-300 p-4">
+                  <div className="text-sm font-semibold">Preview</div>
+                  <div className="mt-2 text-xs text-zinc-600">
+                    Markdown badges do not render exactly like GitHub here, but the generated code is ready to paste.
+                  </div>
+                  <div className="mt-3">
+                    <a
+                      href={builderOutputs.previewUrl || "#"}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex rounded-xl border-2 border-zinc-900 px-3 py-2 text-sm font-semibold hover:bg-zinc-100"
+                    >
+                      {builderOutputs.previewText}
+                    </a>
+                  </div>
+                  <div className="mt-3">
+                    {builderOutputs.badgeUrl ? (
+                      <a href={builderOutputs.previewUrl || "#"} target="_blank" rel="noreferrer">
+                        <img src={builderOutputs.badgeUrl} alt={builderOutputs.badgeAlt} />
+                      </a>
+                    ) : (
+                      <span className="text-xs text-zinc-500">Generate to preview badge output.</span>
+                    )}
+                  </div>
+                </div>
               </div>
-              {cleanRepo ? (
-                <div className="grid gap-4">
-                  {repoLinks.map((link) => (
-                    <LinkCard key={link.url} label={link.label} url={link.url} />
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-3xl border-4 border-dashed border-zinc-400 bg-white p-8 text-zinc-600">
-                  Add a repository name to generate repo-specific links like Pulse, Issues, Releases, Branches, and more.
-                </div>
-              )}
             </section>
           </div>
         )}
-
-        <TestCasesPanel />
       </div>
     </div>
   );
