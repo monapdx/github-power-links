@@ -1,0 +1,107 @@
+name: URL Pattern Change
+description: Report a change, update, or new GitHub URL pattern
+title: "[Pattern] "
+labels: ["enhancement", "url-pattern"]
+assignees: []
+
+body:
+
+* type: markdown
+  attributes:
+  value: |
+  ## URL Pattern Update
+
+  ```
+  Use this form to report:
+  - A broken or outdated GitHub URL pattern
+  - A new GitHub URL worth adding
+  - Changes in GitHub structure or navigation
+  ```
+
+* type: dropdown
+  id: change_type
+  attributes:
+  label: Type of change
+  description: What kind of update is this?
+  options:
+  - New URL pattern
+  - Existing pattern is broken
+  - Existing pattern has changed
+  - Improvement / clarification
+  validations:
+  required: true
+
+* type: input
+  id: label
+  attributes:
+  label: Label / Name
+  description: What should this link be called in the app?
+  placeholder: "e.g. Traffic, Pulse, Discussions"
+  validations:
+  required: true
+
+* type: input
+  id: url_pattern
+  attributes:
+  label: URL pattern
+  description: Use placeholders like {username} and {repo}
+  placeholder: "https://github.com/{username}/{repo}/graphs/traffic"
+  validations:
+  required: true
+
+* type: textarea
+  id: example
+  attributes:
+  label: Example URL
+  description: Provide a real example of the URL working
+  placeholder: "https://github.com/octocat/Hello-World/graphs/traffic"
+  validations:
+  required: true
+
+* type: textarea
+  id: description
+  attributes:
+  label: Description
+  description: What does this URL show or do?
+  placeholder: "Shows repository traffic analytics including views and clones"
+  validations:
+  required: true
+
+* type: textarea
+  id: reason
+  attributes:
+  label: Why is this change needed?
+  description: Explain what changed or why this should be added
+  placeholder: "GitHub moved this page or changed its structure"
+  validations:
+  required: true
+
+* type: checkboxes
+  id: scope
+  attributes:
+  label: Scope
+  description: What does this pattern apply to?
+  options:
+  - label: Profile-level URL
+  - label: Repository-level URL
+  - label: Organization-level URL
+
+* type: checkboxes
+  id: validation
+  attributes:
+  label: Validation
+  description: Confirm the following before submitting
+  options:
+  - label: I tested this URL and it works
+  required: true
+  - label: I checked for duplicates in existing patterns
+  required: true
+  - label: This follows the existing pattern format
+  required: true
+
+* type: textarea
+  id: notes
+  attributes:
+  label: Additional notes
+  description: Optional context, edge cases, or screenshots
+  placeholder: "Anything else that might help"
