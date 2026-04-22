@@ -30,6 +30,8 @@ It’s designed for:
 
 ## Demo
 
+[![Demo](https://img.shields.io/badge/%F0%9F%9A%80Demo-111111?style=for-the-badge)](https://monapdx.github.io/github-power-links/)
+
 Once deployed on GitHub Pages:
 
 ```
@@ -37,6 +39,8 @@ https://YOUR-USERNAME.github.io/github-power-links/
 ```
 
 ---
+
+[![Report broken links](https://img.shields.io/badge/%F0%9F%91%89Report%20broken%20links-111111?style=for-the-badge)](https://github.com/monapdx/github-power-links/issues/new?template=url-pattern-change.yml) [![Suggest a link](https://img.shields.io/badge/%F0%9F%91%89Suggest%20a%20link-111111?style=for-the-badge)](https://github.com/monapdx/github-power-links/issues/new?template=suggest-link-pattern.yml)
 
 ## Getting Started (Local Development)
 
