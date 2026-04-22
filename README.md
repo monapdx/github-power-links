@@ -30,6 +30,8 @@ It’s designed for:
 
 ## Demo
 
+[![Demo](https://img.shields.io/badge/%F0%9F%9A%80Demo-111111?style=for-the-badge)](https://monapdx.github.io/github-power-links/)
+
 Once deployed on GitHub Pages:
 
 ```
