@@ -56,6 +56,190 @@ const builderFieldOrder = [
   "releaseTag",
 ];
 
+const searchExplorerSections = [
+  {
+    title: "Custom GitHub Searches",
+    items: [
+      { title: "Paid Bounties", emoji: "💲", query: "type:issue state:open label:bounty", searchType: "issues" },
+      {
+        title: "Documentation Issues",
+        emoji: "📄",
+        query: "type:issue state:open label:documentation",
+        searchType: "issues",
+      },
+      {
+        title: "Good First Issues",
+        emoji: "🥇",
+        query: 'type:issue state:open label:"good first issue"',
+        searchType: "issues",
+      },
+      {
+        title: "Help Wanted Issues",
+        emoji: "🆘",
+        query: 'type:issue state:open label:"help wanted"',
+        searchType: "issues",
+      },
+    ],
+  },
+  {
+    title: "Find Repositories",
+    items: [
+      {
+        title: "Find boilerplates & starter kits",
+        emoji: "✅",
+        query: '"starter template" vite react',
+        searchType: "repositories",
+      },
+      {
+        title: "Find repos using specific tools",
+        emoji: "🧰",
+        query: 'vite react "gh-pages"',
+        searchType: "repositories",
+      },
+      {
+        title: "Find experimental / weird projects",
+        emoji: "⭐",
+        query: "topic:creative-coding stars:<100",
+        searchType: "repositories",
+      },
+      {
+        title: "Find weird projects by phrase",
+        emoji: "🧪",
+        query: '"weird project" stars:<50',
+        searchType: "repositories",
+      },
+      {
+        title: "Find small, under-the-radar gems",
+        emoji: "💎",
+        query: "stars:10..50 pushed:>2026-01-01",
+        searchType: "repositories",
+      },
+      {
+        title: "Find trending repos",
+        emoji: "💖",
+        query: "stars:>1000 created:>2026-04-01",
+        searchType: "repositories",
+      },
+      {
+        title: "Find repos by tech + popularity",
+        emoji: "🧩",
+        query: "topic:streamlit stars:>100",
+        searchType: "repositories",
+      },
+      {
+        title: "Find repos with specific features",
+        emoji: "📝",
+        query: '"markdown editor" react',
+        searchType: "repositories",
+      },
+      { title: "Find repos with demos", emoji: "🎬", query: '"live demo" github.io', searchType: "repositories" },
+      {
+        title: "Find repos with contribution guides",
+        emoji: "🤝",
+        query: '"CONTRIBUTING.md" stars:<200',
+        searchType: "repositories",
+      },
+      {
+        title: "Find repos with real usage (stars + forks)",
+        emoji: "📦",
+        query: "stars:>50 forks:>20",
+        searchType: "repositories",
+      },
+      {
+        title: "Find abandoned but popular repos",
+        emoji: "🏚️",
+        query: "stars:>100 pushed:<2025-01-01",
+        searchType: "repositories",
+      },
+      {
+        title: "Find early-stage trending repos",
+        emoji: "🚀",
+        query: "stars:20..200 created:>2026-01-01",
+        searchType: "repositories",
+      },
+      { title: "Find tools by GitHub Topics", emoji: "📫", query: "topic:email-builder", searchType: "repositories" },
+    ],
+  },
+  {
+    title: "Find People",
+    items: [
+      {
+        title: "Find collaborators or interesting devs",
+        emoji: "👋",
+        query: "followers:>100 location:portland language:JavaScript",
+        searchType: "users",
+      },
+      {
+        title: "Find people building lots of small projects",
+        emoji: "🧠",
+        query: "repos:>20 followers:<200",
+        searchType: "users",
+      },
+      {
+        title: "Find niche experts",
+        emoji: "🎯",
+        query: "language:TypeScript repos:>5 followers:>20",
+        searchType: "users",
+      },
+      { title: "Find local developers", emoji: "📍", query: "location:portland language:JavaScript", searchType: "users" },
+      { title: "Find indie builders", emoji: "🛠️", query: "followers:<200 repos:>15", searchType: "users" },
+    ],
+  },
+  {
+    title: "Find Issues",
+    items: [
+      {
+        title: "Find ignored issues (low competition)",
+        emoji: "👻",
+        query: "type:issue state:open comments:0",
+        searchType: "issues",
+      },
+      {
+        title: "Find high-demand feature requests",
+        emoji: "🔥",
+        query: "type:issue state:open label:enhancement reactions:>10",
+        searchType: "issues",
+      },
+      {
+        title: "Find bugs nobody is working on",
+        emoji: "🐛",
+        query: "type:issue state:open label:bug no:assignee",
+        searchType: "issues",
+      },
+      { title: "Find stale issues", emoji: "🕰️", query: "type:issue state:open updated:<2026-01-01", searchType: "issues" },
+      {
+        title: "Find discussions about specific problems",
+        emoji: "💬",
+        query: '"github pages" "vite" type:issue',
+        searchType: "issues",
+      },
+    ],
+  },
+  {
+    title: "Find Code Patterns",
+    items: [
+      { title: "Find repos needing work (TODOs in code)", emoji: "🛠️", query: '"TODO" in:file stars:<100', searchType: "code" },
+      { title: "Find markdown-heavy projects", emoji: "🧾", query: 'extension:md "##"', searchType: "code" },
+      { title: "Find contenteditable implementations", emoji: "✏️", query: '"contenteditable" "onInput"', searchType: "code" },
+      { title: "Find drag-and-drop implementations", emoji: "🖱️", query: '"dragstart" "drop"', searchType: "code" },
+      { title: "Find file upload patterns", emoji: "📤", query: '"type=\\"file\\"" "onChange"', searchType: "code" },
+      { title: "Find API call patterns", emoji: "🌐", query: '"fetch(" "POST"', searchType: "code" },
+      {
+        title: "Find reusable components",
+        emoji: "🧩",
+        query: '"export function" "component" language:TypeScript',
+        searchType: "code",
+      },
+      { title: "Find projects built just for fun", emoji: "🎲", query: '"just for fun" stars:<100', searchType: "repositories" },
+    ],
+  },
+];
+
+function buildGitHubSearchUrl(query, searchType) {
+  const params = new URLSearchParams({ q: query, type: searchType });
+  return `https://github.com/search?${params.toString()}`;
+}
+
 function generateProfileLinks(username) {
   if (!username) return [];
   return dedupeByUrl(
@@ -371,6 +555,7 @@ export default function GitHubPowerLinksGenerator() {
   });
   const [builderError, setBuilderError] = useState("");
   const [builderCopiedKey, setBuilderCopiedKey] = useState("");
+  const [searchCopiedKey, setSearchCopiedKey] = useState("");
 
   const cleanUsername = parseUsername(username);
   const cleanRepo = parseRepo(repo);
@@ -514,6 +699,13 @@ export default function GitHubPowerLinksGenerator() {
     setTimeout(() => setBuilderCopiedKey(""), 1200);
   }
 
+  async function copySearchValue(key, value) {
+    const ok = await copyToClipboard(value);
+    if (!ok) return;
+    setSearchCopiedKey(key);
+    setTimeout(() => setSearchCopiedKey(""), 1200);
+  }
+
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-900">
       <div className="mx-auto w-full max-w-[1700px] px-4 py-8 sm:px-6 lg:px-8">
@@ -546,6 +738,14 @@ export default function GitHubPowerLinksGenerator() {
               }`}
             >
               Builder
+            </button>
+            <button
+              onClick={() => handleModeChange("searchExplorer")}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold ${
+                mode === "searchExplorer" ? "bg-zinc-900 text-white" : "text-zinc-700"
+              }`}
+            >
+              Search Explorer
             </button>
           </div>
         </div>
@@ -663,7 +863,7 @@ export default function GitHubPowerLinksGenerator() {
             )}
             <TestCasesPanel />
           </>
-        ) : (
+        ) : mode === "builder" ? (
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)]">
             <section className="rounded-3xl border-4 border-zinc-900 bg-white p-6 shadow-[8px_8px_0_0_#18181b]">
               <h2 className="text-2xl font-black">Build link</h2>
@@ -862,6 +1062,73 @@ export default function GitHubPowerLinksGenerator() {
                 </div>
               </div>
             </section>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="rounded-3xl border-4 border-zinc-900 bg-white p-6 shadow-[8px_8px_0_0_#18181b]">
+              <h2 className="text-2xl font-black">Link Explorer</h2>
+              <p className="mt-1 text-sm text-zinc-600">
+                Curated GitHub search queries for finding issues, repos, code patterns, and people faster.
+              </p>
+            </div>
+
+            {searchExplorerSections.map((section) => (
+              <section
+                key={section.title}
+                className="rounded-3xl border-4 border-zinc-900 bg-white p-6 shadow-[8px_8px_0_0_#18181b]"
+              >
+                <h3 className="text-xl font-black">{section.title}</h3>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {section.items.map((item) => {
+                    const url = buildGitHubSearchUrl(item.query, item.searchType);
+                    return (
+                      <article key={`${section.title}-${item.title}`} className="rounded-2xl border-2 border-zinc-300 p-4">
+                        <div className="text-sm font-black">
+                          <span className="mr-2">{item.emoji}</span>
+                          {item.title}
+                        </div>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex break-all text-sm font-semibold text-blue-700 underline"
+                        >
+                          {item.query}
+                        </a>
+                        <pre className="mt-3 overflow-x-auto rounded-xl border border-zinc-300 bg-zinc-50 p-3 text-xs">
+{item.query}
+                        </pre>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            onClick={() => copySearchValue(`query-${item.title}`, item.query)}
+                            className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-900 px-3 py-2 text-xs font-semibold"
+                          >
+                            <CopyIcon size={14} />
+                            {searchCopiedKey === `query-${item.title}` ? "Copied query" : "Copy query"}
+                          </button>
+                          <button
+                            onClick={() => copySearchValue(`url-${item.title}`, url)}
+                            className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-900 px-3 py-2 text-xs font-semibold"
+                          >
+                            <CopyIcon size={14} />
+                            {searchCopiedKey === `url-${item.title}` ? "Copied link" : "Copy link"}
+                          </button>
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-900 px-3 py-2 text-xs font-semibold"
+                          >
+                            <ExternalLinkIcon size={14} />
+                            Open
+                          </a>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           </div>
         )}
       </div>
