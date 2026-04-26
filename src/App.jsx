@@ -568,11 +568,53 @@ export default function GitHubPowerLinksGenerator() {
     () => getBuilderHelpGifCandidates(builderPattern, selectedBuilderPattern),
     [builderPattern, selectedBuilderPattern]
   );
-  const [builderHelpGifIndex, setBuilderHelpGifIndex] = useState(0);
-  const builderHelpGifSrc = builderHelpGifCandidates[builderHelpGifIndex] || "";
+  const [builderHelpGifResolvedUrl, setBuilderHelpGifResolvedUrl] = useState("");
 
   useEffect(() => {
-    setBuilderHelpGifIndex(0);
+    const candidates = builderHelpGifCandidates;
+    let cancelled = false;
+
+    function clearResolved() {
+      if (!cancelled) setBuilderHelpGifResolvedUrl("");
+    }
+
+    function runProbe() {
+      if (cancelled) return;
+      if (!candidates.length) {
+        clearResolved();
+        return;
+      }
+
+      let index = 0;
+
+      function tryNext() {
+        if (cancelled) return;
+        if (index >= candidates.length) {
+          clearResolved();
+          return;
+        }
+        const url = candidates[index];
+        const probe = new Image();
+        probe.onload = () => {
+          if (!cancelled) setBuilderHelpGifResolvedUrl(url);
+        };
+        probe.onerror = () => {
+          if (cancelled) return;
+          index += 1;
+          tryNext();
+        };
+        probe.src = url;
+      }
+
+      clearResolved();
+      tryNext();
+    }
+
+    const scheduleId = requestAnimationFrame(runProbe);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(scheduleId);
+    };
   }, [builderHelpGifCandidates]);
 
   const profileLinks = useMemo(() => generateProfileLinks(cleanUsername), [cleanUsername]);
@@ -894,17 +936,16 @@ export default function GitHubPowerLinksGenerator() {
                   {selectedBuilderPattern?.note || ""}
                 </p>
 
-                {builderHelpGifSrc ? (
+                {builderHelpGifResolvedUrl ? (
                   <div className="rounded-2xl border-2 border-zinc-300 bg-zinc-50 p-3">
                     <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">
                       Where to find this on GitHub
                     </div>
                     <img
-                      src={builderHelpGifSrc}
+                      src={builderHelpGifResolvedUrl}
                       alt={`${selectedBuilderPattern?.label || "Selected"} walkthrough`}
                       className="w-full rounded-xl border border-zinc-300"
                       loading="lazy"
-                      onError={() => setBuilderHelpGifIndex((current) => current + 1)}
                     />
                   </div>
                 ) : null}
