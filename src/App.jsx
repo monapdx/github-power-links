@@ -624,12 +624,20 @@ export default function GitHubPowerLinksGenerator() {
     const groups = [];
     if (profileLinks.length) {
       groups.push(
-        ["# Profile links", ...profileLinks.map((link) => `${link.label}: ${link.url}`)].join("\n")
+        [
+          "## Profile Links",
+          "",
+          ...profileLinks.map((link) => `- **${link.label}:** [${link.label}](${link.url})`),
+        ].join("\n")
       );
     }
     if (repoLinks.length) {
       groups.push(
-        ["# Repository links", ...repoLinks.map((link) => `${link.label}: ${link.url}`)].join("\n")
+        [
+          "## Repository Links",
+          "",
+          ...repoLinks.map((link) => `- **${link.label}:** [${link.label}](${link.url})`),
+        ].join("\n")
       );
     }
     return groups.join("\n\n");
