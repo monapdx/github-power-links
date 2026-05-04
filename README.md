@@ -1,12 +1,10 @@
 # GitHub Power Links
 
-Generate every useful GitHub URL for a user or repository — instantly.
-
----
-
 ## Overview
 
 **GitHub Power Links** is a simple web tool that takes a GitHub username (required) and an optional repository name, and generates a comprehensive set of useful GitHub URLs.
+
+<img src="https://raw.githubusercontent.com/monapdx/github-power-links/refs/heads/main/github-power-links-05-04-2026_11_53_AM.png">
 
 It’s designed for:
 
