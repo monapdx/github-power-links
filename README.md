@@ -17,12 +17,16 @@ It’s designed for:
 
 ## Features
 
-* Generate profile links (repos, stars, followers, activity, etc.)
-* Generate repository links (issues, PRs, graphs, traffic, releases, etc.)
-* Copy individual links
-* Copy all links at once
-* Clean input parsing (handles full GitHub URLs)
-* Lightweight and fast (no external dependencies)
+* **Explorer mode** for bulk profile and repository links
+* **Builder mode** for creating one precise GitHub URL with:
+  * Plain URL
+  * Markdown link
+  * Badge markdown
+  * HTML link/button
+* **Search Explorer mode** with curated GitHub search query templates
+* Copy individual outputs and **copy all explorer links as a markdown list**
+* Input parsing that accepts usernames/repos or full GitHub URLs
+* Visual help GIFs in Builder mode (when available)
 
 ---
 
@@ -42,47 +46,13 @@ https://YOUR-USERNAME.github.io/github-power-links/
 
 ## Getting Started (Local Development)
 
-### 1. Create project
-
-```bash
-npm create vite@latest github-power-links -- --template react
-cd github-power-links
-```
-
-### 2. Install dependencies
+### 1. Install dependencies
 
 ```bash
 npm install
-npm install tailwindcss @tailwindcss/vite
 ```
 
-### 3. Configure Vite
-
-Update `vite.config.js`:
-
-```js
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-})
-```
-
-### 4. Add Tailwind
-
-Replace `src/index.css` with:
-
-```css
-@import "tailwindcss";
-```
-
-### 5. Add the app
-
-Replace `src/App.jsx` with the provided GitHub Power Links component.
-
-### 6. Run the app
+### 2. Run the app
 
 ```bash
 npm run dev
@@ -177,6 +147,20 @@ You’ll get links like:
 * [https://github.com/octocat/Hello-World/pulse](https://github.com/octocat/Hello-World/pulse)
 * [https://github.com/octocat/Hello-World/graphs/contributors](https://github.com/octocat/Hello-World/graphs/contributors)
 
+When using **Copy all links** in Explorer mode, the clipboard output is markdown-formatted:
+
+```md
+## Profile Links
+
+- **Profile:** [Profile](https://github.com/octocat)
+- **Repositories:** [Repositories](https://github.com/octocat?tab=repositories)
+
+## Repository Links
+
+- **Repository:** [Repository](https://github.com/octocat/Hello-World)
+- **Issues:** [Issues](https://github.com/octocat/Hello-World/issues)
+```
+
 ---
 
 ## Use Cases
@@ -192,9 +176,9 @@ You’ll get links like:
 ## Future Ideas
 
 * Shareable links (`?u=username&r=repo`)
-* Export as Markdown
-* Categories / collapsible sections
-* Search/filter links
+* Search/filter patterns in Builder mode
+* Saved presets for commonly used link patterns
+* One-click import/export of custom search templates
 * GitHub API integration
 
 ---
