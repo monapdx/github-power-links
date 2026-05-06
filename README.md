@@ -170,11 +170,10 @@ When using **Copy all links** in Explorer mode, the clipboard output is markdown
 
 ## Use Cases
 
-* Quickly inspect repos
-* Share deep GitHub links
-* Research contributors and activity
-* Debug repo structure
-* Build tooling on top of GitHub URLs
+- Share a direct link to your open issues
+- Link users to a pre-filled issue form
+- Jump to repo activity (pulse, insights)
+- Build profile/dashboard links
 
 ---
 
