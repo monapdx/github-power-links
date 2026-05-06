@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { bulkProfilePatterns, bulkRepoPatterns, builderPatterns } from "./patterns";
 import {
   buildBadgeImageUrl,
@@ -423,6 +423,97 @@ function Toast({ message }) {
   );
 }
 
+function LinkTypeDropdown({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+  const options = useMemo(
+    () => Object.entries(builderPatterns).map(([key, config]) => ({ key, label: config.label })),
+    []
+  );
+
+  const selected = options.find((opt) => opt.key === value) || options[0];
+
+  useEffect(() => {
+    function onPointerDown(event) {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(event.target)) setOpen(false);
+    }
+    if (!open) return;
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  useEffect(() => {
+    function onKeyDown(event) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    if (!open) return;
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border-4 border-zinc-900 bg-white px-4 py-3 text-left text-base font-semibold outline-none transition-colors hover:bg-zinc-50 focus:bg-white"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="truncate">{selected?.label || "Select"}</span>
+        <span className="shrink-0 rounded-xl border-2 border-zinc-900 bg-zinc-100 p-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d={open ? "m18 15-6-6-6 6" : "m6 9 6 6 6-6"} />
+          </svg>
+        </span>
+      </button>
+
+      {open ? (
+        <div
+          className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border-4 border-zinc-900 bg-white shadow-[8px_8px_0_0_#18181b]"
+          role="listbox"
+          aria-label="Link type"
+        >
+          <div className="gp-scrollbar max-h-72 overflow-auto p-2">
+            {options.map((opt) => {
+              const active = opt.key === value;
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => {
+                    onChange(opt.key);
+                    setOpen(false);
+                  }}
+                  className={`w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                    active ? "bg-zinc-900 text-white" : "text-zinc-900 hover:bg-zinc-100"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function GitHubMarkIcon({ size = 28 }) {
   return (
     <svg
@@ -568,6 +659,16 @@ export default function GitHubPowerLinksGenerator() {
   const [builderCopiedKey, setBuilderCopiedKey] = useState("");
   const [searchCopiedKey, setSearchCopiedKey] = useState("");
   const [toastMessage, setToastMessage] = useState("");
+  const toastTimeoutRef = useRef(null);
+
+  function showToast(message, durationMs = 1800) {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    setToastMessage(message);
+    toastTimeoutRef.current = setTimeout(() => setToastMessage(""), durationMs);
+  }
 
   const cleanUsername = parseUsername(username);
   const cleanRepo = parseRepo(repo);
@@ -658,11 +759,9 @@ export default function GitHubPowerLinksGenerator() {
   async function copyAll() {
     const ok = await copyToClipboard(exportText);
     if (ok) {
-      setToastMessage("Copied all links as markdown.");
-      setTimeout(() => setToastMessage(""), 1800);
+      showToast("Copied all links as markdown.", 1800);
     } else {
-      setToastMessage("Copy failed (clipboard blocked by browser).");
-      setTimeout(() => setToastMessage(""), 2400);
+      showToast("Copy failed (clipboard blocked by browser).", 2400);
     }
   }
 
@@ -762,10 +861,21 @@ export default function GitHubPowerLinksGenerator() {
 
   async function copyBuilderOutput(key, value) {
     const ok = await copyToClipboard(value);
-    if (!ok) return;
+    if (!ok) {
+      showToast("Copy failed (clipboard blocked by browser).", 2400);
+      return;
+    }
+
+    const labelByKey = {
+      plainUrl: "Plain URL",
+      markdownLink: "Markdown Link",
+      badgeMarkdown: "Badge Markdown",
+      htmlLink: "HTML Link/Button",
+    };
 
     setBuilderCopiedKey(key);
     setTimeout(() => setBuilderCopiedKey(""), 1200);
+    showToast(`Copied ${labelByKey[key] || "output"}.`, 1600);
   }
 
   async function copySearchValue(key, value) {
@@ -944,20 +1054,13 @@ export default function GitHubPowerLinksGenerator() {
               <div className="mt-5 space-y-4">
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold">Link type</span>
-                  <select
+                  <LinkTypeDropdown
                     value={builderPattern}
-                    onChange={(e) => {
-                      setBuilderPattern(e.target.value);
+                    onChange={(next) => {
+                      setBuilderPattern(next);
                       setBuilderError("");
                     }}
-                    className="w-full rounded-2xl border-4 border-zinc-900 bg-zinc-100 px-4 py-3 text-base outline-none"
-                  >
-                    {Object.entries(builderPatterns).map(([key, config]) => (
-                      <option key={key} value={key}>
-                        {config.label}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </label>
 
                 <p className="rounded-xl border-2 border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700">

@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+.gp-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #18181b #f4f4f5; /* thumb / track (zinc-900 / zinc-100) */
+}
+
+.gp-scrollbar::-webkit-scrollbar {
+  width: 12px;
+}
+
+.gp-scrollbar::-webkit-scrollbar-track {
+  background: #f4f4f5; /* zinc-100 */
+  border-left: 2px solid #18181b;
+}
+
+.gp-scrollbar::-webkit-scrollbar-thumb {
+  background: #18181b; /* zinc-900 */
+  border: 2px solid #f4f4f5; /* create inset look */
+  border-radius: 9999px;
+}
+
+.gp-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #09090b; /* zinc-950 */
+}
