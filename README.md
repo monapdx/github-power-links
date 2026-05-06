@@ -1,5 +1,10 @@
 # GitHub Power Links
 
+Generate deep links for GitHub profiles, repositories, issues, and more.
+
+Stop guessing GitHub URLs.
+Instantly create the exact link you need.
+
 ## Overview
 
 **GitHub Power Links** is a simple web tool that takes a GitHub username (required) and an optional repository name, and generates a comprehensive set of useful GitHub URLs.
@@ -165,11 +170,10 @@ When using **Copy all links** in Explorer mode, the clipboard output is markdown
 
 ## Use Cases
 
-* Quickly inspect repos
-* Share deep GitHub links
-* Research contributors and activity
-* Debug repo structure
-* Build tooling on top of GitHub URLs
+- Share a direct link to your open issues
+- Link users to a pre-filled issue form
+- Jump to repo activity (pulse, insights)
+- Build profile/dashboard links
 
 ---
 
