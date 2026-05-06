@@ -412,6 +412,17 @@ function ExternalLinkIcon(props) {
   );
 }
 
+function Toast({ message }) {
+  if (!message) return null;
+  return (
+    <div className="fixed bottom-5 left-1/2 z-50 w-[min(520px,calc(100vw-2rem))] -translate-x-1/2">
+      <div className="rounded-2xl border-4 border-zinc-900 bg-white px-4 py-3 text-sm font-semibold shadow-[8px_8px_0_0_#18181b]">
+        {message}
+      </div>
+    </div>
+  );
+}
+
 function GitHubMarkIcon({ size = 28 }) {
   return (
     <svg
@@ -556,6 +567,7 @@ export default function GitHubPowerLinksGenerator() {
   const [builderError, setBuilderError] = useState("");
   const [builderCopiedKey, setBuilderCopiedKey] = useState("");
   const [searchCopiedKey, setSearchCopiedKey] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
 
   const cleanUsername = parseUsername(username);
   const cleanRepo = parseRepo(repo);
@@ -644,7 +656,14 @@ export default function GitHubPowerLinksGenerator() {
   }, [profileLinks, repoLinks]);
 
   async function copyAll() {
-    await copyToClipboard(exportText);
+    const ok = await copyToClipboard(exportText);
+    if (ok) {
+      setToastMessage("Copied all links as markdown.");
+      setTimeout(() => setToastMessage(""), 1800);
+    } else {
+      setToastMessage("Copy failed (clipboard blocked by browser).");
+      setTimeout(() => setToastMessage(""), 2400);
+    }
   }
 
   function handleModeChange(nextMode) {
@@ -758,6 +777,7 @@ export default function GitHubPowerLinksGenerator() {
 
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-900">
+      <Toast message={toastMessage} />
       <div className="mx-auto w-full max-w-[1700px] px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 rounded-3xl border-4 border-zinc-900 bg-white p-6 shadow-[8px_8px_0_0_#18181b]">
           <div className="flex items-center gap-3">
