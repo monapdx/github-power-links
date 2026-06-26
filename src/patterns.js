@@ -1,3 +1,4 @@
+import { builderPatternHelpGifs } from "./helpGifs";
 import { cleanPath } from "./utils";
 
 export const bulkProfilePatterns = [
@@ -203,3 +204,9 @@ export const builderPatterns = {
     build: ({ owner, repo, commit }) => `https://github.com/${owner}/${repo}/commit/${encodeURIComponent(commit)}`,
   },
 };
+
+for (const [key, gif] of Object.entries(builderPatternHelpGifs)) {
+  if (builderPatterns[key]) {
+    builderPatterns[key].helpGif = gif;
+  }
+}

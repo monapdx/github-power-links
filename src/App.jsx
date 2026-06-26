@@ -10,15 +10,6 @@ import {
   parseUsername,
 } from "./utils";
 
-const helpGifModules = import.meta.glob(["../*.gif", "../*.GIF", "../public/**/*.gif", "../public/**/*.GIF"], {
-  eager: true,
-  import: "default",
-});
-const discoveredHelpGifs = Object.entries(helpGifModules).map(([filePath, url]) => ({
-  filePath,
-  url: String(url),
-}));
-
 const builderFieldMeta = {
   owner: { label: "Owner / Username", placeholder: "monapdx" },
   repo: { label: "Repository", placeholder: "Frontend-Widgets" },
@@ -280,88 +271,6 @@ function getDefaultBuilderInputs(owner = "", repo = "") {
     badgeLabel: "Open on GitHub",
     badgeColor: "pink",
   };
-}
-
-function toSlugVariants(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return [];
-
-  const cleaned = raw
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/[^a-zA-Z0-9]+/g, " ")
-    .trim();
-
-  if (!cleaned) return [];
-
-  const words = cleaned.split(/\s+/);
-  const lowerWords = words.map((word) => word.toLowerCase());
-
-  return Array.from(
-    new Set([
-      raw,
-      cleaned,
-      lowerWords.join(""),
-      lowerWords.join("-"),
-      lowerWords.join("_"),
-      lowerWords.join(" "),
-    ])
-  );
-}
-
-function normalizeGifStem(value) {
-  return String(value || "")
-    .toLowerCase()
-    .replace(/\.gif$/i, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function getDiscoveredHelpGifCandidates(patternKey, patternConfig) {
-  const targetStems = Array.from(
-    new Set([...toSlugVariants(patternKey), ...toSlugVariants(patternConfig?.label || "")])
-  ).map(normalizeGifStem);
-
-  if (!targetStems.length) return [];
-
-  const scored = discoveredHelpGifs
-    .map((gif) => {
-      const filename = gif.filePath.split("/").pop() || "";
-      const stem = normalizeGifStem(filename);
-      let score = 0;
-
-      for (const target of targetStems) {
-        if (!target) continue;
-        if (stem === target) score = Math.max(score, 4);
-        else if (stem.startsWith(`${target} `)) score = Math.max(score, 3);
-        else if (stem.includes(target)) score = Math.max(score, 2);
-      }
-
-      return score > 0 ? { url: gif.url, score } : null;
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.score - a.score);
-
-  return Array.from(new Set(scored.map((item) => item.url)));
-}
-
-function getBuilderHelpGifCandidates(patternKey, patternConfig) {
-  const candidates = [];
-  const label = patternConfig?.label || "";
-
-  if (patternConfig?.helpGif) {
-    candidates.push(patternConfig.helpGif);
-  }
-
-  const stems = Array.from(new Set([...toSlugVariants(patternKey), ...toSlugVariants(label)]));
-
-  for (const stem of stems) {
-    candidates.push(`/gifs/${stem}.gif`);
-    candidates.push(`/gifs/${stem}.GIF`);
-    candidates.push(`/${stem}.gif`);
-    candidates.push(`/${stem}.GIF`);
-  }
-
-  return Array.from(new Set([...getDiscoveredHelpGifCandidates(patternKey, patternConfig), ...candidates]));
 }
 
 function IconBase({ children, size = 16, className = "" }) {
@@ -677,58 +586,7 @@ export default function GitHubPowerLinksGenerator() {
     () => new Set(selectedBuilderPattern?.fields || []),
     [selectedBuilderPattern]
   );
-  const builderHelpGifCandidates = useMemo(
-    () => getBuilderHelpGifCandidates(builderPattern, selectedBuilderPattern),
-    [builderPattern, selectedBuilderPattern]
-  );
-  const [builderHelpGifResolvedUrl, setBuilderHelpGifResolvedUrl] = useState("");
-
-  useEffect(() => {
-    const candidates = builderHelpGifCandidates;
-    let cancelled = false;
-
-    function clearResolved() {
-      if (!cancelled) setBuilderHelpGifResolvedUrl("");
-    }
-
-    function runProbe() {
-      if (cancelled) return;
-      if (!candidates.length) {
-        clearResolved();
-        return;
-      }
-
-      let index = 0;
-
-      function tryNext() {
-        if (cancelled) return;
-        if (index >= candidates.length) {
-          clearResolved();
-          return;
-        }
-        const url = candidates[index];
-        const probe = new Image();
-        probe.onload = () => {
-          if (!cancelled) setBuilderHelpGifResolvedUrl(url);
-        };
-        probe.onerror = () => {
-          if (cancelled) return;
-          index += 1;
-          tryNext();
-        };
-        probe.src = url;
-      }
-
-      clearResolved();
-      tryNext();
-    }
-
-    const scheduleId = requestAnimationFrame(runProbe);
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(scheduleId);
-    };
-  }, [builderHelpGifCandidates]);
+  const builderHelpGifUrl = selectedBuilderPattern?.helpGif || "";
 
   const profileLinks = useMemo(() => generateProfileLinks(cleanUsername), [cleanUsername]);
   const repoLinks = useMemo(() => generateRepoLinks(cleanUsername, cleanRepo), [cleanUsername, cleanRepo]);
@@ -1067,13 +925,13 @@ export default function GitHubPowerLinksGenerator() {
                   {selectedBuilderPattern?.note || ""}
                 </p>
 
-                {builderHelpGifResolvedUrl ? (
+                {builderHelpGifUrl ? (
                   <div className="rounded-2xl border-2 border-zinc-300 bg-zinc-50 p-3">
                     <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">
                       Where to find this on GitHub
                     </div>
                     <img
-                      src={builderHelpGifResolvedUrl}
+                      src={builderHelpGifUrl}
                       alt={`${selectedBuilderPattern?.label || "Selected"} walkthrough`}
                       className="w-full rounded-xl border border-zinc-300"
                       loading="lazy"
